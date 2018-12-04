@@ -109,16 +109,12 @@ func (g *GithubClient) CreateComment(repo models.Repo, pullNum int, comment stri
 
 // PullIsApproved returns true if the pull request was approved.
 func (g *GithubClient) PullIsApproved(repo models.Repo, pull models.PullRequest) (bool, error) {
-	reviews, _, err := g.client.PullRequests.ListReviews(g.ctx, repo.Owner, repo.Name, pull.Num, nil)
+	request, err := g.GetPullRequest(repo, pull.Num)
 	if err != nil {
-		return false, errors.Wrap(err, "getting reviews")
+		return false, err
 	}
-	for _, review := range reviews {
-		if review != nil && review.GetState() == "APPROVED" {
-			return true, nil
-		}
-	}
-	return false, nil
+
+	return *request.Mergeable, nil
 }
 
 // GetPullRequest returns the pull request.
