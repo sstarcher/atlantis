@@ -135,14 +135,15 @@ func (p *DefaultProjectCommandRunner) doPlan(ctx models.ProjectCommandContext) (
 	}
 	defer unlockFn()
 
-	// Clone is idempotent so okay to run even if the repo was already cloned.
-	repoDir, cloneErr := p.WorkingDir.Clone(ctx.Log, ctx.BaseRepo, ctx.HeadRepo, ctx.Pull, ctx.RebaseRepo, ctx.Workspace)
+	// Get working directory
+	repoDir, cloneErr := p.WorkingDir.GetWorkingDir(ctx.BaseRepo, ctx.Pull, ctx.Workspace)
 	if cloneErr != nil {
 		if unlockErr := lockAttempt.UnlockFn(); unlockErr != nil {
 			ctx.Log.Err("error unlocking state after plan error: %v", unlockErr)
 		}
 		return nil, "", cloneErr
 	}
+
 	projAbsPath := filepath.Join(repoDir, ctx.RepoRelDir)
 
 	// Use default stage unless another workflow is defined in config

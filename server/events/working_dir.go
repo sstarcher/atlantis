@@ -78,11 +78,16 @@ func (w *FileWorkspace) Clone(
 		currCommit := strings.Trim(string(output), "\n")
 		// We're prefix matching here because BitBucket doesn't give us the full
 		// commit, only a 12 character prefix.
-		if strings.HasPrefix(currCommit, p.HeadCommit) {
-			log.Debug("repo is at correct commit %q so will not re-clone", p.HeadCommit)
-			return cloneDir, nil
+		if !rebase {
+			if strings.HasPrefix(currCommit, p.HeadCommit) {
+				log.Debug("repo is at correct commit %q so will not re-clone", p.HeadCommit)
+				return cloneDir, nil
+			}
+			log.Debug("repo was already cloned but is not at correct commit, wanted %q got %q", p.HeadCommit, currCommit)
+		} else {
+			log.Debug("rebase is specified so cloning")
 		}
-		log.Debug("repo was already cloned but is not at correct commit, wanted %q got %q", p.HeadCommit, currCommit)
+
 		// We'll fall through to re-clone.
 	}
 
@@ -130,8 +135,8 @@ func (w *FileWorkspace) forceClone(log *logging.SimpleLogger,
 		log.Info("rebase branch onto master")
 		rebaseCmd := exec.Command("git", "rebase", "origin/master") // #nosec
 		rebaseCmd.Dir = cloneDir
-		if err := rebaseCmd.Run(); err != nil {
-			return "", errors.Wrapf(err, "unable to rebase %s onto master", p.Branch)
+		if output, err := rebaseCmd.CombinedOutput(); err != nil {
+			return "", errors.Wrapf(err, "unable to rebase %s onto master %s", p.Branch, string(output))
 		}
 	}
 
