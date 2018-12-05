@@ -135,8 +135,9 @@ func (p *DefaultProjectCommandRunner) doPlan(ctx models.ProjectCommandContext) (
 	}
 	defer unlockFn()
 
-	// Get working directory
-	repoDir, cloneErr := p.WorkingDir.GetWorkingDir(ctx.BaseRepo, ctx.Pull, ctx.Workspace)
+	// Clone is idempotent when rebase is not true so okay to run even if the repo was already cloned.
+	ctx.Log.Err("WHAT IS REBASE %v", ctx.RebaseRepo)
+	repoDir, cloneErr := p.WorkingDir.Clone(ctx.Log, ctx.BaseRepo, ctx.HeadRepo, ctx.Pull, ctx.RebaseRepo, ctx.Workspace)
 	if cloneErr != nil {
 		if unlockErr := lockAttempt.UnlockFn(); unlockErr != nil {
 			ctx.Log.Err("error unlocking state after plan error: %v", unlockErr)
